@@ -1,12 +1,12 @@
 const client = require('./client');
 const util = require('util');
 
-const REPLACE_ME = 'HELP REPLACE ME!!!!';
+// const REPLACE_ME = 'HELP REPLACE ME!!!!';
 
 // GET - /api/video-games - get all video games
 async function getAllVideoGames() {
     try {
-        const { rows: videoGames } = await client.query(REPLACE_ME);
+        const { rows: videoGames } = await client.query('SELECT * FROM videoGames');
         return videoGames;
     } catch (error) {
         throw new Error("Make sure you have replaced the REPLACE_ME placeholder.")
@@ -20,7 +20,7 @@ async function getVideoGameById(id) {
             SELECT * FROM videoGames
             WHERE id = $1;
         `, [id]);
-        return videoGame;
+        return videoGame[0];
     } catch (error) {
         throw error;
     }
@@ -28,17 +28,47 @@ async function getVideoGameById(id) {
 
 // POST - /api/video-games - create a new video game
 async function createVideoGame(body) {
-    // LOGIC GOES HERE
+    try {
+        const {rows: [videoGame]} = await  client.query('INSERT INTO purchases ( name, description, price, "inStock", "isPopular", "imgUrl) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *', [body.name, body.description, body.price]);
+        return videoGame;
+    }catch(err){
+        throw err;
+    }
 }
+
 
 // PUT - /api/video-games/:id - update a single video game by id
 async function updateVideoGame(id, fields = {}) {
-    // LOGIC GOES HERE
+    const setString = Object.keys(fields).map((key, index) => `"${key}"=$${index + 1}`).join(', ');
+    if (setString.length === 0) {
+        return;
+    }
+    try {
+            const { rows: [videoGame] } = await client.query(`
+                UPDATE videoGame
+                SET ${setString}
+                WHERE id=${id}
+                RETURNING *;
+            `, Object.values(fields));
+            return videoGame;
+    }catch(err){
+        throw err;
+    }
+    
 }
 
 // DELETE - /api/video-games/:id - delete a single video game by id
 async function deleteVideoGame(id) {
-    // LOGIC GOES HERE
+    try {
+        const { rows: [videoGame] } = await client.query(`
+            DELETE FROM boardgames
+            WHERE id=$1
+            RETURNING *;
+        `, [id]);
+        return videoGame;
+    } catch (error) {
+        throw error;
+    }
 }
 
 module.exports = {
